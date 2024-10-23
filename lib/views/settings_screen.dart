@@ -4,7 +4,7 @@ import 'dart:developer';
 import '../controllers/settings_controller.dart';
 
 class SettingsPage extends StatelessWidget {
-  final SettingsController controller = Get.put(SettingsController());
+  final SettingsController controller = Get.find();
 
   SettingsPage({super.key});
 
