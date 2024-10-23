@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'dart:developer';
 import '../controllers/settings_controller.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -13,6 +12,16 @@ class SettingsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Wi-Fi Settings"),
+        actions: [
+          // Add a refresh button in the AppBar
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              // Call the fetchNetworks method to refresh the network list
+              controller.fetchNetworks();
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -23,20 +32,45 @@ class SettingsPage extends StatelessWidget {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
+            // Using Obx to reactively show loading indicator or network list
             Expanded(
-              child: ListView.builder(
-                itemCount: controller.networks.length,
-                itemBuilder: (context, index) {
-                  final network = controller.networks[index];
-                  return ListTile(
-                    title: Text(network),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.wifi),
-                      onPressed: () => _showWifiConnectDialog(context, network),
-                    ),
+              child: Obx(() {
+                // Show loading indicator while fetching networks
+                if (controller.isLoading.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(), // Loading spinner
                   );
-                },
-              ),
+                }
+
+                // Check if networks list is empty
+                if (controller.networks.isEmpty) {
+                  return const Center(
+                    child: Text('No networks available'),
+                  );
+                }
+
+                // Wrap ListView in RefreshIndicator for pull-to-refresh functionality
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    await controller
+                        .fetchNetworks(); // Refresh the network list
+                  },
+                  child: ListView.builder(
+                    itemCount: controller.networks.length,
+                    itemBuilder: (context, index) {
+                      final network = controller.networks[index];
+                      return ListTile(
+                        title: Text(network),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.wifi),
+                          onPressed: () =>
+                              _showWifiConnectDialog(context, network),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              }),
             ),
           ],
         ),
@@ -63,6 +97,15 @@ class SettingsPage extends StatelessWidget {
                   hintText: "Password",
                 ),
               ),
+              const SizedBox(height: 20),
+              Obx(() {
+                // Display a CircularProgressIndicator if Wi-Fi connection is in progress
+                if (controller.isConnecting.value) {
+                  return const CircularProgressIndicator(); // Show a loading indicator while connecting
+                } else {
+                  return Container(); // Empty container when not connecting
+                }
+              }),
             ],
           ),
           actions: [
@@ -70,7 +113,6 @@ class SettingsPage extends StatelessWidget {
               onPressed: () {
                 // Call function to connect to Wi-Fi with password
                 controller.connectToWifi(network, passwordController.text);
-                Navigator.pop(context);
               },
               child: const Text("Connect"),
             ),

@@ -14,6 +14,31 @@ class HomeScreen extends StatelessWidget {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Obx(() {
+            // Show a loading spinner while checking Wi-Fi connection
+            if (controller.isCheckingWifi.value) {
+              return const Center(
+                child: CircularProgressIndicator(), // Show loading spinner
+              );
+            }
+
+            // Once the Wi-Fi check is done, show the Wi-Fi connection status as simple text
+            return Center(
+              child: Text(
+                controller.connectedWifi.value == 'Wi-Fi not connected'
+                    ? 'Wi-Fi not connected'
+                    : 'Connected: ${controller.connectedWifi.value}',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: controller.connectedWifi.value == 'Wi-Fi not connected'
+                      ? Colors.red // Red text if not connected
+                      : Colors.green, // Green text if connected
+                ),
+                textAlign: TextAlign.center, // Center the text
+              ),
+            );
+          }),
           GestureDetector(
             onTap: () => Get.toNamed(AppRoutes.settings),
             child: const Card(

@@ -4,51 +4,70 @@ import 'package:process_run/shell.dart'; // You can use this package for executi
 
 class SettingsController extends GetxController {
   var networks = <String>[].obs;
+  var isLoading = false.obs; // To track loading state
+  var isConnecting = false.obs; // To track Wi-Fi connection state
 
   @override
   void onInit() {
     super.onInit();
     log('SettingsController onInit');
-    getAvailableNetworks();
+    fetchNetworks(); // Fetch networks when the controller initializes
   }
 
   // Fetch available Wi-Fi networks
-  Future<void> getAvailableNetworks() async {
+  Future<void> fetchNetworks() async {
+    isLoading(true); // Set loading to true
     try {
       var shell = Shell(verbose: true); // Set verbose when creating Shell
       var result = await shell.run(
         'nmcli dev wifi', // Command to get Wi-Fi networks
       );
 
-      // Process the result and print stdout
+      // Process the result and update network list
       for (var processResult in result) {
-        log('STDOUT: ${processResult.stdout}');
-        log('STDERR: ${processResult.stderr}');
-
-        // Parse and update network list
         networks.assignAll(parseNetworks(processResult.stdout));
       }
     } catch (e) {
       log('Error running nmcli command: $e');
+    } finally {
+      isLoading(false); // Set loading to false after fetching
     }
   }
 
-  // Dummy parser, customize based on command output
+  // Improved parser to handle SSID and other columns
   List<String> parseNetworks(String output) {
-    // This is an example, customize according to your command's output
+    List<String> ssids = [];
+
+    // Split the output by newlines to get each network entry
     List<String> lines = output.split('\n');
-    return lines
-        .map((line) => line.split(' ')[0])
-        .toList(); // Assuming the first part is the network name
+
+    for (String line in lines) {
+      // Skip the header line and empty lines
+      if (line.contains('BSSID') || line.trim().isEmpty) {
+        continue;
+      }
+
+      // Split the line by spaces, considering multiple spaces as a delimiter
+      List<String> columns = line.split(RegExp(r'\s{2,}'));
+
+      // Check if the SSID exists (it should be in the third column)
+      if (columns.length > 2 && columns[2].isNotEmpty && columns[2] != '--') {
+        ssids.add(columns[2]); // SSID is the third column in nmcli output
+      }
+    }
+
+    return ssids;
   }
 
   // Connect to a Wi-Fi network
   Future<void> connectToWifi(String ssid, String password) async {
+    isConnecting(true); // Start loading when attempting to connect
     try {
-      var shell = Shell(verbose: true); // Set verbose here too if needed
+      var shell = Shell(verbose: true);
 
+      // Wrap SSID and password in double quotes to handle spaces and special characters
       var result = await shell.run(
-        'nmcli dev wifi connect $ssid password $password',
+        'nmcli dev wifi connect "$ssid" password "$password"',
       );
 
       // Process results and output success/failure
@@ -58,6 +77,8 @@ class SettingsController extends GetxController {
       }
     } catch (e) {
       log('Error connecting to Wi-Fi: $e');
+    } finally {
+      isConnecting(false); // Stop loading after connection attempt
     }
   }
 }
