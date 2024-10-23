@@ -95,7 +95,7 @@ class CaptureScreen extends StatelessWidget {
               // Capture Photo Button
               ElevatedButton.icon(
                 onPressed: () {
-                  Get.snackbar('Capture', 'Capture photo button pressed.');
+                  controller.captureImage();
                 },
                 icon: const Icon(Icons.camera_alt),
                 label: const Text("Capture Photo"),
