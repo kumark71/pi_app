@@ -27,7 +27,7 @@ class CaptureController extends GetxController {
   Future<void> captureImage() async {
     try {
       // Specify the path where the image will be saved
-      String imagePath = '/home/dev/Documents/dev/images/captured_image.jpg';
+      String imagePath = '/home/dev/captured_image.jpg';
 
       // Run the libcamera-still command to capture the image
       ProcessResult result = await Process.run(
