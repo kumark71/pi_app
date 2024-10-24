@@ -105,8 +105,8 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             double keyboardHeight = isKeyboardVisible
-                ? constraints.maxHeight * 0.5
-                : 0; // Keyboard takes up 40% of the screen
+                ? constraints.maxHeight * 0.7
+                : 0; 
 
             return Column(
               children: [

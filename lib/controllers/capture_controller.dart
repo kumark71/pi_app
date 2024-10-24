@@ -11,6 +11,7 @@ class CaptureController extends GetxController {
   late String mobile;
   late String gender;
   var capturedImagePath = ''.obs; // Holds the path of the captured image
+  var isLoading = false.obs; // Observable boolean for loader state
 
   @override
   void onInit() {
@@ -25,6 +26,7 @@ class CaptureController extends GetxController {
 
   // Function to trigger the image capture using libcamera-still
   Future<void> captureImage() async {
+    isLoading.value = true; // Show loader
     try {
       // Specify the path where the image will be saved
       String imagePath = '/home/dev/captured_image.jpg';
@@ -38,21 +40,20 @@ class CaptureController extends GetxController {
       if (result.exitCode == 0) {
         // Image captured successfully
         capturedImagePath.value = imagePath;
-        uploadImageToServer();
+        await uploadImageToServer(); // Upload the image to the server
         Get.snackbar('Success', 'Image captured successfully');
-        // Optionally, you can call uploadImageToServer() here to send it to the server
       } else {
-        print(
-            "print Error ${result.stderr}"); // Error during the capture process
-        // Get.snackbar('Error', 'Failed to captu/re image: ${result.stderr}');
+        print("Error: ${result.stderr}"); // Error during the capture process
+        Get.snackbar('Error', 'Failed to capture image: ${result.stderr}');
       }
     } catch (e) {
-      print("print Error ${e}");
-      // Get.snackbar('Error', 'Failed to execute capture: $e');
+      print("Error: $e");
+      Get.snackbar('Error', 'Failed to execute capture: $e');
+    } finally {
+      isLoading.value = false; // Hide loader
     }
   }
 
-  // Function to send the captured image to a remote server
   // Function to convert the image to Base64
   Future<String> convertImageToBase64(String imagePath) async {
     try {
@@ -60,8 +61,7 @@ class CaptureController extends GetxController {
       final bytes = await File(imagePath).readAsBytes();
       // Convert the bytes to a Base64 string
       String base64Image = base64Encode(bytes);
-      print(
-          "Base64 Encoded Image: $base64Image"); // Print the Base64-encoded string
+      print("Base64 Encoded Image: $base64Image"); // Print the Base64-encoded string
       return base64Image;
     } catch (e) {
       print("Error converting image to Base64: $e");
@@ -74,12 +74,10 @@ class CaptureController extends GetxController {
     if (capturedImagePath.value.isNotEmpty) {
       try {
         // Convert the image to Base64
-        String base64Image =
-            await convertImageToBase64(capturedImagePath.value);
+        String base64Image = await convertImageToBase64(capturedImagePath.value);
 
         if (base64Image.isNotEmpty) {
-          var uri = Uri.parse(
-              'http://your_server_ip/upload'); // Replace with your server's IP
+          var uri = Uri.parse('http://your_server_ip/upload'); // Replace with your server's IP
           var request = http.MultipartRequest('POST', uri);
 
           // Attach the Base64-encoded image as part of the request
