@@ -5,11 +5,16 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
 class CaptureController extends GetxController {
+  //  Get.offAndToNamed(AppRoutes.capture, arguments: {
+  //     'name': nameController.text,
+  //     'age': ageController.text,
+  //     'slotnumber': selectedSlotNumber.value.toString(),
+  //   });
   // Variables to hold patient details
   late String name;
   late String age;
-  late String mobile;
-  late String gender;
+  late String slotNumber;
+
   var capturedImagePath = ''.obs; // Holds the path of the captured image
   var isLoading = false.obs; // Observable boolean for loader state
 
@@ -20,8 +25,7 @@ class CaptureController extends GetxController {
     final arguments = Get.arguments ?? {};
     name = arguments['name'] ?? 'N/A';
     age = arguments['age'] ?? 'N/A';
-    mobile = arguments['mobile'] ?? 'N/A';
-    gender = arguments['gender'] ?? 'N/A';
+    slotNumber = arguments['slotnumber'] ?? 'N/A';
   }
 
   // Function to trigger the image capture using libcamera-still
@@ -61,7 +65,8 @@ class CaptureController extends GetxController {
       final bytes = await File(imagePath).readAsBytes();
       // Convert the bytes to a Base64 string
       String base64Image = base64Encode(bytes);
-      print("Base64 Encoded Image: $base64Image"); // Print the Base64-encoded string
+      print(
+          "Base64 Encoded Image: $base64Image"); // Print the Base64-encoded string
       return base64Image;
     } catch (e) {
       print("Error converting image to Base64: $e");
@@ -74,10 +79,12 @@ class CaptureController extends GetxController {
     if (capturedImagePath.value.isNotEmpty) {
       try {
         // Convert the image to Base64
-        String base64Image = await convertImageToBase64(capturedImagePath.value);
+        String base64Image =
+            await convertImageToBase64(capturedImagePath.value);
 
         if (base64Image.isNotEmpty) {
-          var uri = Uri.parse('http://your_server_ip/upload'); // Replace with your server's IP
+          var uri = Uri.parse(
+              'http://your_server_ip/upload'); // Replace with your server's IP
           var request = http.MultipartRequest('POST', uri);
 
           // Attach the Base64-encoded image as part of the request

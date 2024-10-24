@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Required for input formatters
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:virtual_keyboard_multi_language/virtual_keyboard_multi_language.dart'; // Import the virtual keyboard package
 import 'package:pi_control_app/controllers/patient_controller.dart';
-import 'package:pi_control_app/utils/CustomVirtualKeyboard.dart';
 
 class PatientDetailsScreen extends StatefulWidget {
   const PatientDetailsScreen({Key? key}) : super(key: key);
@@ -16,59 +16,68 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   bool isKeyboardVisible = false; // Controls visibility of the virtual keyboard
   TextEditingController? activeController; // The currently active text field
   String currentInput = ""; // The current text input from the virtual keyboard
+  bool isShiftEnabled = false; // Track if Shift is enabled
+  int keyboardVersion =
+      0; // To forcefully rebuild the keyboard on each field switch
+
+  // Keep track of which field is currently active
+  int currentIndex = 0;
 
   // Focus nodes for each field
   final FocusNode nameFocusNode = FocusNode();
   final FocusNode ageFocusNode = FocusNode();
-  final FocusNode mobileFocusNode = FocusNode();
 
   final List<TextEditingController> controllers = [];
   final List<FocusNode> focusNodes = []; // Store all focus nodes
+
+  // List of slot numbers (1-10)
+  final List<int> slotNumbers = List.generate(10, (index) => index + 1);
 
   @override
   void initState() {
     super.initState();
     controllers.add(controller.nameController);
     controllers.add(controller.ageController);
-    controllers.add(controller.mobileController);
 
-    focusNodes.addAll([nameFocusNode, ageFocusNode, mobileFocusNode]);
+    focusNodes.addAll([nameFocusNode, ageFocusNode]);
   }
 
   @override
   void dispose() {
     nameFocusNode.dispose();
     ageFocusNode.dispose();
-    mobileFocusNode.dispose();
     super.dispose();
   }
 
   // Handle key presses from the virtual keyboard
-  void _handleKeyPress(String key) {
+  void _handleKeyPress(VirtualKeyboardKey key) {
     setState(() {
-      if (key == 'Backspace') {
-        // Handle backspace key
-        if (currentInput.isNotEmpty) {
-          currentInput = currentInput.substring(0, currentInput.length - 1);
+      if (key.keyType == VirtualKeyboardKeyType.String) {
+        // Handle alphanumeric keys, considering Shift state
+        currentInput += isShiftEnabled ? key.capsText ?? '' : key.text ?? '';
+      } else if (key.keyType == VirtualKeyboardKeyType.Action) {
+        // Handle actions like Backspace, Space, and Shift
+        switch (key.action) {
+          case VirtualKeyboardKeyAction.Backspace:
+            if (currentInput.isNotEmpty) {
+              currentInput = currentInput.substring(0, currentInput.length - 1);
+            }
+            break;
+          case VirtualKeyboardKeyAction.Return:
+            // Move to the next field on Enter key
+            _moveToNextField();
+            break;
+          case VirtualKeyboardKeyAction.Space:
+            currentInput += ' ';
+            break;
+          case VirtualKeyboardKeyAction.Shift:
+            // Toggle Shift state when Shift key is pressed
+            setState(() {
+              isShiftEnabled = !isShiftEnabled;
+            });
+            break;
+          default:
         }
-      } else if (key == 'Space') {
-        // Handle space key
-        currentInput += ' ';
-      } else if (key == 'Enter') {
-        // Move to the next field on Enter key
-        int currentIndex = controllers.indexOf(activeController!);
-        if (currentIndex < controllers.length - 1) {
-          _onFieldTap(
-              controllers[currentIndex + 1], focusNodes[currentIndex + 1]);
-        } else {
-          // Hide keyboard if it's the last field
-          setState(() {
-            isKeyboardVisible = false;
-          });
-        }
-      } else {
-        // Handle alphanumeric keys
-        currentInput += key;
       }
 
       // Update the text in the active text field
@@ -77,14 +86,38 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   }
 
   // Function to show the virtual keyboard and set the active text field
-  void _onFieldTap(TextEditingController controller, FocusNode focusNode) {
+  void _onFieldTap(
+      TextEditingController controller, FocusNode focusNode, int index) {
     setState(() {
       activeController = controller;
       currentInput = controller.text; // Sync the current input
+      isShiftEnabled = false; // Reset Shift state when switching fields
       isKeyboardVisible = true; // Show the virtual keyboard
+      currentIndex = index; // Update the active field index
       FocusScope.of(context)
           .requestFocus(focusNode); // Request focus for the field
+
+      // Force rebuild the keyboard by incrementing the version
+      keyboardVersion++;
     });
+  }
+
+  // Function to move to the next field
+  void _moveToNextField() {
+    if (currentIndex < focusNodes.length - 1) {
+      // Move to the next field
+      setState(() {
+        currentIndex++; // Increment the current index
+        FocusScope.of(context)
+            .requestFocus(focusNodes[currentIndex]); // Move to the next focus
+        activeController = controllers[currentIndex];
+        currentInput = activeController!.text;
+        keyboardVersion++; // Force rebuild of the keyboard
+      });
+    } else {
+      // If the current field is the last one, hide the keyboard
+      _hideKeyboard();
+    }
   }
 
   // Function to hide the keyboard when tapping outside the form
@@ -104,9 +137,8 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
         onTap: _hideKeyboard, // Hide keyboard when tapping outside
         child: LayoutBuilder(
           builder: (context, constraints) {
-            double keyboardHeight = isKeyboardVisible
-                ? constraints.maxHeight * 0.7
-                : 0; 
+            double keyboardHeight =
+                isKeyboardVisible ? constraints.maxHeight * 0.7 : 0;
 
             return Column(
               children: [
@@ -140,8 +172,8 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                                 border: OutlineInputBorder(),
                               ),
                               onTap: () {
-                                _onFieldTap(
-                                    controller.nameController, nameFocusNode);
+                                _onFieldTap(controller.nameController,
+                                    nameFocusNode, 0);
                               },
                               inputFormatters: [
                                 // Allow only alphabetic characters and spaces
@@ -168,11 +200,13 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                               ),
                               onTap: () {
                                 _onFieldTap(
-                                    controller.ageController, ageFocusNode);
+                                    controller.ageController, ageFocusNode, 1);
                               },
                               inputFormatters: [
                                 // Accept only numbers
                                 FilteringTextInputFormatter.digitsOnly,
+                                // Limit input length to 2 characters
+                                LengthLimitingTextInputFormatter(2),
                               ],
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
@@ -183,49 +217,41 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                             ),
                             const SizedBox(height: 16),
 
-                            // Mobile Number Field
-                            TextFormField(
-                              controller: controller.mobileController,
-                              focusNode: mobileFocusNode,
-                              keyboardType: TextInputType.phone,
-                              decoration: const InputDecoration(
-                                labelText: "Mobile Number",
-                                border: OutlineInputBorder(),
-                              ),
-                              onTap: () {
-                                _onFieldTap(controller.mobileController,
-                                    mobileFocusNode);
-                              },
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Gender Dropdown
+                            // Slot Number Dropdown
                             Obx(
-                              () => DropdownButtonFormField<String>(
+                              () => DropdownButtonFormField<int>(
                                 decoration: const InputDecoration(
-                                  labelText: "Gender",
+                                  labelText: "Slot Number",
                                   border: OutlineInputBorder(),
                                 ),
-                                value: controller.selectedGender.value.isEmpty
+                                value: controller.selectedSlotNumber.value == 0
                                     ? null
-                                    : controller.selectedGender.value,
-                                items: const [
-                                  DropdownMenuItem(
-                                      value: "Male", child: Text("Male")),
-                                  DropdownMenuItem(
-                                      value: "Female", child: Text("Female")),
-                                  DropdownMenuItem(
-                                      value: "Other", child: Text("Other")),
-                                ],
+                                    : controller.selectedSlotNumber.value,
+                                items: slotNumbers
+                                    .map(
+                                      (slot) => DropdownMenuItem<int>(
+                                        value: slot,
+                                        child: Text(slot.toString()),
+                                      ),
+                                    )
+                                    .toList(),
                                 onChanged: (value) {
-                                  controller.selectedGender.value = value!;
+                                  controller.selectedSlotNumber.value =
+                                      value ?? 0;
                                   setState(() {
                                     isKeyboardVisible =
-                                        false; // Hide keyboard when selecting gender
+                                        false; // Hide keyboard when selecting slot
                                   });
+                                },
+                                validator: (value) {
+                                  if (value == null || value == 0) {
+                                    return 'Please select a valid slot number';
+                                  }
+                                  return null;
                                 },
                               ),
                             ),
+
                             const SizedBox(height: 32),
 
                             // Submit Button
@@ -256,7 +282,21 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                   duration: const Duration(milliseconds: 200),
                   height: keyboardHeight,
                   child: isKeyboardVisible
-                      ? ResponsiveVirtualKeyboard(onKeyPress: _handleKeyPress)
+                      ? Container(
+                          color: Colors.grey[300], // Gray background color
+                          child: VirtualKeyboard(
+                            key: ValueKey(
+                                keyboardVersion), // Force rebuild by changing key
+                            height: 300,
+                            textColor: Colors.black,
+                            fontSize: 20,
+                            defaultLayouts: [
+                              VirtualKeyboardDefaultLayouts.English
+                            ],
+                            type: VirtualKeyboardType.Alphanumeric,
+                            postKeyPress: _handleKeyPress,
+                          ),
+                        )
                       : null,
                 ),
               ],

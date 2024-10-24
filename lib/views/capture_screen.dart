@@ -44,7 +44,8 @@ class CaptureScreen extends StatelessWidget {
                             ),
                           ),
                           const Divider(
-                              thickness: 1.0), // A divider to separate the title
+                              thickness:
+                                  1.0), // A divider to separate the title
                           const SizedBox(height: 10),
 
                           // Patient Information
@@ -69,7 +70,7 @@ class CaptureScreen extends StatelessWidget {
                           const SizedBox(height: 10),
 
                           Text(
-                            "Mobile: ${controller.mobile}",
+                            "Slot Number: ${controller.slotNumber}",
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
@@ -77,15 +78,6 @@ class CaptureScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 10),
-
-                          Text(
-                            "Gender: ${controller.gender}",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
-                            ),
-                          ),
                         ],
                       ),
                     ),
