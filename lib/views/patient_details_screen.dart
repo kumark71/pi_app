@@ -1,10 +1,8 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:virtual_keyboard_multi_language/virtual_keyboard_multi_language.dart'; // Import the virtual keyboard package
 import 'package:pi_control_app/controllers/patient_controller.dart';
-import 'package:pi_control_app/utils/CustomVirtualKeyboard.dart';
 
 class PatientDetailsScreen extends StatefulWidget {
   const PatientDetailsScreen({Key? key}) : super(key: key);
@@ -18,6 +16,12 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   bool isKeyboardVisible = false; // Controls visibility of the virtual keyboard
   TextEditingController? activeController; // The currently active text field
   String currentInput = ""; // The current text input from the virtual keyboard
+  bool isShiftEnabled = false; // Track if Shift is enabled
+  int keyboardVersion =
+      0; // To forcefully rebuild the keyboard on each field switch
+
+  // Keep track of which field is currently active
+  int currentIndex = 0;
 
   // Focus nodes for each field
   final FocusNode nameFocusNode = FocusNode();
@@ -25,6 +29,9 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
 
   final List<TextEditingController> controllers = [];
   final List<FocusNode> focusNodes = []; // Store all focus nodes
+
+  // List of slot numbers (1-10)
+  final List<int> slotNumbers = List.generate(10, (index) => index + 1);
 
   @override
   void initState() {
@@ -39,50 +46,85 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   void dispose() {
     nameFocusNode.dispose();
     ageFocusNode.dispose();
-
     super.dispose();
   }
 
   // Handle key presses from the virtual keyboard
-  void _handleKeyPress(String key) {
+  void _handleKeyPress(VirtualKeyboardKey key) {
     setState(() {
-      if (key == 'Backspace') {
-        if (currentInput.isNotEmpty) {
-          currentInput = currentInput.substring(0, currentInput.length - 1);
+      if (key.keyType == VirtualKeyboardKeyType.String) {
+        // Handle alphanumeric keys, considering Shift state
+        currentInput += isShiftEnabled ? key.capsText ?? '' : key.text ?? '';
+      } else if (key.keyType == VirtualKeyboardKeyType.Action) {
+        // Handle actions like Backspace, Space, and Shift
+        switch (key.action) {
+          case VirtualKeyboardKeyAction.Backspace:
+            if (currentInput.isNotEmpty) {
+              currentInput = currentInput.substring(0, currentInput.length - 1);
+            }
+            break;
+          case VirtualKeyboardKeyAction.Return:
+            // Move to the next field on Enter key
+            _moveToNextField();
+            break;
+          case VirtualKeyboardKeyAction.Space:
+            currentInput += ' ';
+            break;
+          case VirtualKeyboardKeyAction.Shift:
+            // Toggle Shift state when Shift key is pressed
+            setState(() {
+              isShiftEnabled = !isShiftEnabled;
+            });
+            break;
+          default:
         }
-      } else if (key == 'Space') {
-        currentInput += ' ';
-      } else if (key == 'Enter') {
-        int currentIndex = controllers.indexOf(activeController!);
-        if (currentIndex < controllers.length - 1) {
-          _onFieldTap(
-              controllers[currentIndex + 1], focusNodes[currentIndex + 1]);
-        } else {
-          setState(() {
-            isKeyboardVisible = false;
-          });
-        }
-      } else {
-        currentInput += key;
       }
 
+      // Update the text in the active text field
       activeController?.text = currentInput;
     });
   }
 
-  void _onFieldTap(TextEditingController controller, FocusNode focusNode) {
+  // Function to show the virtual keyboard and set the active text field
+  void _onFieldTap(
+      TextEditingController controller, FocusNode focusNode, int index) {
     setState(() {
       activeController = controller;
-      currentInput = controller.text;
-      isKeyboardVisible = true;
-      FocusScope.of(context).requestFocus(focusNode);
+      currentInput = controller.text; // Sync the current input
+      isShiftEnabled = false; // Reset Shift state when switching fields
+      isKeyboardVisible = true; // Show the virtual keyboard
+      currentIndex = index; // Update the active field index
+      FocusScope.of(context)
+          .requestFocus(focusNode); // Request focus for the field
+
+      // Force rebuild the keyboard by incrementing the version
+      keyboardVersion++;
     });
   }
 
+  // Function to move to the next field
+  void _moveToNextField() {
+    if (currentIndex < focusNodes.length - 1) {
+      // Move to the next field
+      setState(() {
+        currentIndex++; // Increment the current index
+        FocusScope.of(context)
+            .requestFocus(focusNodes[currentIndex]); // Move to the next focus
+        activeController = controllers[currentIndex];
+        currentInput = activeController!.text;
+        keyboardVersion++; // Force rebuild of the keyboard
+      });
+    } else {
+      // If the current field is the last one, hide the keyboard
+      _hideKeyboard();
+    }
+  }
+
+  // Function to hide the keyboard when tapping outside the form
   void _hideKeyboard() {
     setState(() {
       isKeyboardVisible = false;
-      FocusScope.of(context).unfocus();
+      FocusScope.of(context).unfocus(); // Remove focus from all fields
     });
   }
 
@@ -92,14 +134,15 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
       appBar: AppBar(),
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: _hideKeyboard,
+        onTap: _hideKeyboard, // Hide keyboard when tapping outside
         child: LayoutBuilder(
           builder: (context, constraints) {
             double keyboardHeight =
-                isKeyboardVisible ? constraints.maxHeight * 0.5 : 0;
+                isKeyboardVisible ? constraints.maxHeight * 0.7 : 0;
 
             return Column(
               children: [
+                // The form part, wrapped with Expanded and Flexible
                 Flexible(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(16.0),
@@ -119,6 +162,8 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                               ),
                             ),
                             const SizedBox(height: 32),
+
+                            // Patient Name Field (Only accept alphabetic characters and spaces)
                             TextFormField(
                               controller: controller.nameController,
                               focusNode: nameFocusNode,
@@ -127,10 +172,11 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                                 border: OutlineInputBorder(),
                               ),
                               onTap: () {
-                                _onFieldTap(
-                                    controller.nameController, nameFocusNode);
+                                _onFieldTap(controller.nameController,
+                                    nameFocusNode, 0);
                               },
                               inputFormatters: [
+                                // Allow only alphabetic characters and spaces
                                 FilteringTextInputFormatter.allow(
                                     RegExp(r'^[a-zA-Z\s]+$')),
                               ],
@@ -142,6 +188,8 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                               },
                             ),
                             const SizedBox(height: 16),
+
+                            // Age Field (Only accept numeric input)
                             TextFormField(
                               controller: controller.ageController,
                               focusNode: ageFocusNode,
@@ -152,10 +200,13 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                               ),
                               onTap: () {
                                 _onFieldTap(
-                                    controller.ageController, ageFocusNode);
+                                    controller.ageController, ageFocusNode, 1);
                               },
                               inputFormatters: [
+                                // Accept only numbers
                                 FilteringTextInputFormatter.digitsOnly,
+                                // Limit input length to 2 characters
+                                LengthLimitingTextInputFormatter(2),
                               ],
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
@@ -165,6 +216,10 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                               },
                             ),
                             const SizedBox(height: 16),
+
+                            // Slot Number Dropdown
+
+                            // Submit Button
                             Obx(() => Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceEvenly,
@@ -198,50 +253,66 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                 const SizedBox(
                   height: 16,
                 ),
-                Expanded(
-                  child: Obx(() {
-                    return ListView.builder(
-                      itemCount: controller.patients.length,
-                      itemBuilder: (context, index) {
-                        final patient = controller.patients[index];
-                        return ListTile(
-                          title: Text(patient.name),
-                          subtitle: Text('Age: ${patient.age}'),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {
-                              // Show a confirmation dialog before deleting
-                              Get.defaultDialog(
-                                title: 'Delete Patient',
-                                middleText:
-                                    'Are you sure you want to delete ${patient.name}?',
-                                confirm: ElevatedButton(
-                                  onPressed: () {
-                                    controller.patients.removeAt(index);
-                                    Get.back(); // Close the dialog
-                                  },
-                                  child: const Text('Yes'),
-                                ),
-                                cancel: ElevatedButton(
-                                  onPressed: () {
-                                    Get.back(); // Close the dialog without deleting
-                                  },
-                                  child: const Text('No'),
-                                ),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    );
-                  }),
-                ),
+                Obx(() => controller.patients.isNotEmpty
+                    ? Expanded(
+                        child: ListView.builder(
+                          itemCount: controller.patients.length,
+                          itemBuilder: (context, index) {
+                            final patient = controller.patients[index];
+                            return ListTile(
+                              title: Text(patient.name),
+                              subtitle: Text('Age: ${patient.age}'),
+                              trailing: IconButton(
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  // Show a confirmation dialog before deleting
+                                  Get.defaultDialog(
+                                    title: 'Delete Patient',
+                                    middleText:
+                                        'Are you sure you want to delete ${patient.name}?',
+                                    confirm: ElevatedButton(
+                                      onPressed: () {
+                                        controller.patients.removeAt(index);
+                                        Get.back(); // Close the dialog
+                                      },
+                                      child: const Text('Yes'),
+                                    ),
+                                    cancel: ElevatedButton(
+                                      onPressed: () {
+                                        Get.back(); // Close the dialog without deleting
+                                      },
+                                      child: const Text('No'),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      )
+                    : Container()),
 
+                // Virtual Keyboard
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   height: keyboardHeight,
                   child: isKeyboardVisible
-                      ? ResponsiveVirtualKeyboard(onKeyPress: _handleKeyPress)
+                      ? Container(
+                          color: Colors.grey[300], // Gray background color
+                          child: VirtualKeyboard(
+                            key: ValueKey(
+                                keyboardVersion), // Force rebuild by changing key
+                            height: 300,
+                            textColor: Colors.black,
+                            fontSize: 20,
+                            defaultLayouts: [
+                              VirtualKeyboardDefaultLayouts.English
+                            ],
+                            type: VirtualKeyboardType.Alphanumeric,
+                            postKeyPress: _handleKeyPress,
+                          ),
+                        )
                       : null,
                 ),
               ],
