@@ -39,6 +39,7 @@ dependencies:
   flutter_svg: ^2.0.10+1
   process_run: ^1.2.1
   http: ^1.2.2
+  virtual_keyboard_multi_language: ^1.1.2
 
 dev_dependencies:
   flutter_test:
