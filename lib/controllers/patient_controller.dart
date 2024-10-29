@@ -5,28 +5,28 @@ import 'package:pi_control_app/routes/app_routes.dart';
 class PatientDetailsController extends GetxController {
   final nameController = TextEditingController();
   final ageController = TextEditingController();
-  final mobileController = TextEditingController(); // Add this
-  var selectedGender = ''.obs;
+
+  // RxInt for selected slot number (as it's a dropdown)
+  var selectedSlotNumber = 0.obs;
 
   void submitForm() {
-    // Add validation for mobile number as well, if required
+    // Validate name
     if (GetUtils.isNullOrBlank(nameController.text) == true) {
       Get.snackbar('Error', 'Please enter the patient\'s name');
       return;
     }
+
+    // Validate age
     if (GetUtils.isNullOrBlank(ageController.text) == true ||
         int.tryParse(ageController.text) == null ||
         int.parse(ageController.text) <= 0) {
       Get.snackbar('Error', 'Please enter a valid age');
       return;
     }
-    if (GetUtils.isNullOrBlank(mobileController.text) == true ||
-        !GetUtils.isPhoneNumber(mobileController.text)) {
-      Get.snackbar('Error', 'Please enter a valid mobile number');
-      return;
-    }
-    if (selectedGender.value.isEmpty) {
-      Get.snackbar('Error', 'Please select a gender');
+
+    // Validate slot number
+    if (selectedSlotNumber.value == 0) {
+      Get.snackbar('Error', 'Please select a valid slot number');
       return;
     }
 
@@ -34,8 +34,7 @@ class PatientDetailsController extends GetxController {
     Get.offAndToNamed(AppRoutes.capture, arguments: {
       'name': nameController.text,
       'age': ageController.text,
-      'mobile': mobileController.text,
-      'gender': selectedGender.value,
+      'slotnumber': selectedSlotNumber.value.toString(),
     });
   }
 }

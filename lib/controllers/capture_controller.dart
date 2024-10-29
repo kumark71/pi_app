@@ -5,12 +5,18 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
 class CaptureController extends GetxController {
+  //  Get.offAndToNamed(AppRoutes.capture, arguments: {
+  //     'name': nameController.text,
+  //     'age': ageController.text,
+  //     'slotnumber': selectedSlotNumber.value.toString(),
+  //   });
   // Variables to hold patient details
   late String name;
   late String age;
-  late String mobile;
-  late String gender;
+  late String slotNumber;
+
   var capturedImagePath = ''.obs; // Holds the path of the captured image
+  var isLoading = false.obs; // Observable boolean for loader state
 
   @override
   void onInit() {
@@ -19,15 +25,15 @@ class CaptureController extends GetxController {
     final arguments = Get.arguments ?? {};
     name = arguments['name'] ?? 'N/A';
     age = arguments['age'] ?? 'N/A';
-    mobile = arguments['mobile'] ?? 'N/A';
-    gender = arguments['gender'] ?? 'N/A';
+    slotNumber = arguments['slotnumber'] ?? 'N/A';
   }
 
   // Function to trigger the image capture using libcamera-still
   Future<void> captureImage() async {
+    isLoading.value = true; // Show loader
     try {
       // Specify the path where the image will be saved
-      String imagePath = '/home/dev/Documents/dev/images/captured_image.jpg';
+      String imagePath = '/home/dev/captured_image.jpg';
 
       // Run the libcamera-still command to capture the image
       ProcessResult result = await Process.run(
@@ -38,21 +44,20 @@ class CaptureController extends GetxController {
       if (result.exitCode == 0) {
         // Image captured successfully
         capturedImagePath.value = imagePath;
-        uploadImageToServer();
+        await uploadImageToServer(); // Upload the image to the server
         Get.snackbar('Success', 'Image captured successfully');
-        // Optionally, you can call uploadImageToServer() here to send it to the server
       } else {
-        print(
-            "print Error ${result.stderr}"); // Error during the capture process
-        // Get.snackbar('Error', 'Failed to captu/re image: ${result.stderr}');
+        print("Error: ${result.stderr}"); // Error during the capture process
+        Get.snackbar('Error', 'Failed to capture image: ${result.stderr}');
       }
     } catch (e) {
-      print("print Error ${e}");
-      // Get.snackbar('Error', 'Failed to execute capture: $e');
+      print("Error: $e");
+      Get.snackbar('Error', 'Failed to execute capture: $e');
+    } finally {
+      isLoading.value = false; // Hide loader
     }
   }
 
-  // Function to send the captured image to a remote server
   // Function to convert the image to Base64
   Future<String> convertImageToBase64(String imagePath) async {
     try {
