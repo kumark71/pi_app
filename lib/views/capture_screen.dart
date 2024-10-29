@@ -16,97 +16,83 @@ class CaptureScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Center(
-          child: Obx(() => Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Card to display Patient Details with Title inside
-                  Card(
-                    color: Colors.grey[100], // Subtle light background color
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Title inside the card
-                          const Center(
-                            child: Text(
-                              "Patient Details",
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ),
-                          const Divider(
-                              thickness:
-                                  1.0), // A divider to separate the title
-                          const SizedBox(height: 10),
-
-                          // Patient Information
-                          Text(
-                            "Name: ${controller.name}",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-
-                          Text(
-                            "Age: ${controller.age}",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-
-                          Text(
-                            "Slot Number: ${controller.slotNumber}",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Card(
+              color: Colors.grey[100],
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Center(
+                      child: Text(
+                        "Patient Details",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 30),
+                    const Divider(thickness: 1.0),
+                    const SizedBox(height: 10),
+                    // Display each patient in a ListView without delete option
+                    Obx(() {
+                      if (controller.patients.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            "No patients available",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        );
+                      }
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: controller.patients.length,
+                        itemBuilder: (context, index) {
+                          final patient = controller.patients[index];
+                          return ListTile(
+                            title: Text(
+                              "Name: ${patient.name}",
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            subtitle: Text(
+                              "Age: ${patient.age}",
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          );
+                        },
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
 
-                  // Show the loader if isLoading is true
-                  if (controller.isLoading.value)
-                    const CircularProgressIndicator(),
-
-                  const SizedBox(height: 30),
-
-                  // Capture Photo Button
-                  ElevatedButton.icon(
-                    onPressed: controller.isLoading.value
-                        ? null // Disable the button while loading
-                        : () {
-                            controller.captureImage();
-                          },
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text("Capture Photo"),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 30, vertical: 15),
-                      textStyle: const TextStyle(fontSize: 18),
-                    ),
-                  ),
-                ],
-              )),
+            // Capture Photo Button
+            ElevatedButton.icon(
+              onPressed: () {
+                controller.captureImage();
+              },
+              icon: const Icon(Icons.camera_alt),
+              label: const Text("Capture Photo"),
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                textStyle: const TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
         ),
       ),
     );
