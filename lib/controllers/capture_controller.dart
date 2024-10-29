@@ -3,24 +3,18 @@ import 'dart:io';
 
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:pi_control_app/models/patient_model.dart';
 
 class CaptureController extends GetxController {
-  // Variables to hold patient details
-  late String name;
-  late String age;
-  late String mobile;
-  late String gender;
-  var capturedImagePath = ''.obs; // Holds the path of the captured image
+  var capturedImagePath = ''.obs;
+  List<PatientModel> patients = <PatientModel>[].obs;
 
   @override
   void onInit() {
     super.onInit();
     // Retrieve the arguments from the previous screen
     final arguments = Get.arguments ?? {};
-    name = arguments['name'] ?? 'N/A';
-    age = arguments['age'] ?? 'N/A';
-    mobile = arguments['mobile'] ?? 'N/A';
-    gender = arguments['gender'] ?? 'N/A';
+    patients = arguments['patients'] ?? <PatientModel>[].obs;
   }
 
   // Function to trigger the image capture using libcamera-still
