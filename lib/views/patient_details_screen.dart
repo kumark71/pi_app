@@ -217,8 +217,6 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                             ),
                             const SizedBox(height: 16),
 
-                            // Slot Number Dropdown
-
                             // Submit Button
                             Obx(() => Row(
                                   mainAxisAlignment:
@@ -249,49 +247,60 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                     ),
                   ),
                 ),
-                // Display the list of patients
-                const SizedBox(
-                  height: 16,
-                ),
-                Obx(() => controller.patients.isNotEmpty
-                    ? Expanded(
-                        child: ListView.builder(
-                          itemCount: controller.patients.length,
-                          itemBuilder: (context, index) {
-                            final patient = controller.patients[index];
-                            return ListTile(
-                              title: Text(patient.name),
-                              subtitle: Text('Age: ${patient.age}'),
-                              trailing: IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () {
-                                  // Show a confirmation dialog before deleting
-                                  Get.defaultDialog(
-                                    title: 'Delete Patient',
-                                    middleText:
-                                        'Are you sure you want to delete ${patient.name}?',
-                                    confirm: ElevatedButton(
-                                      onPressed: () {
-                                        controller.patients.removeAt(index);
-                                        Get.back(); // Close the dialog
-                                      },
-                                      child: const Text('Yes'),
-                                    ),
-                                    cancel: ElevatedButton(
-                                      onPressed: () {
-                                        Get.back(); // Close the dialog without deleting
-                                      },
-                                      child: const Text('No'),
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                      )
-                    : Container()),
+                // Display the list of patients only when the keyboard is not visible
+                // Display the list of patients only when the keyboard is not visible
+                if (!isKeyboardVisible)
+                  const SizedBox(
+                    height: 16,
+                  ),
+                if (!isKeyboardVisible)
+                  Obx(() => controller.patients.isNotEmpty
+                      ? Expanded(
+                          child: ListView.builder(
+                            itemCount: controller.patients.length,
+                            itemBuilder: (context, index) {
+                              final patient = controller.patients[index];
+                              return ListTile(
+                                leading: Text(
+                                  "Slot: ${index + 1}", // Display slot number
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Colors.blueAccent,
+                                  ),
+                                ),
+                                title: Text(patient.name),
+                                subtitle: Text('Age: ${patient.age}'),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.red),
+                                  onPressed: () {
+                                    // Show a confirmation dialog before deleting
+                                    Get.defaultDialog(
+                                      title: 'Delete Patient',
+                                      middleText:
+                                          'Are you sure you want to delete ${patient.name}?',
+                                      confirm: ElevatedButton(
+                                        onPressed: () {
+                                          controller.patients.removeAt(index);
+                                          Get.back(); // Close the dialog
+                                        },
+                                        child: const Text('Yes'),
+                                      ),
+                                      cancel: ElevatedButton(
+                                        onPressed: () {
+                                          Get.back(); // Close the dialog without deleting
+                                        },
+                                        child: const Text('No'),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        )
+                      : Container()),
 
                 // Virtual Keyboard
                 AnimatedContainer(

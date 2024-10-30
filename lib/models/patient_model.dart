@@ -3,4 +3,10 @@ class PatientModel {
   final String age;
 
   PatientModel({required this.name, required this.age});
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'age': age,
+    };
+  }
 }

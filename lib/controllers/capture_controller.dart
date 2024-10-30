@@ -1,12 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:pi_control_app/models/patient_model.dart';
+import 'dart:developer';
+
+import 'package:pi_control_app/models/patient_result.dart';
+import 'package:pi_control_app/routes/app_routes.dart';
+import 'package:pi_control_app/views/result_screen.dart';
 
 class CaptureController extends GetxController {
   var capturedImagePath = ''.obs;
+  var isLoading = false.obs; // Observable boolean for loader state
+
   List<PatientModel> patients = <PatientModel>[].obs;
 
   @override
@@ -19,6 +27,7 @@ class CaptureController extends GetxController {
 
   // Function to trigger the image capture using libcamera-still
   Future<void> captureImage() async {
+    isLoading.value = true; // Show loader
     try {
       // Specify the path where the image will be saved
       String imagePath = '/home/dev/captured_image.jpg';
@@ -32,17 +41,16 @@ class CaptureController extends GetxController {
       if (result.exitCode == 0) {
         // Image captured successfully
         capturedImagePath.value = imagePath;
-        uploadImageToServer();
-        Get.snackbar('Success', 'Image captured successfully');
-        // Optionally, you can call uploadImageToServer() here to send it to the server
+        await uploadImageToServer(); // Upload the image to the server
       } else {
-        print(
-            "print Error ${result.stderr}"); // Error during the capture process
-        // Get.snackbar('Error', 'Failed to captu/re image: ${result.stderr}');
+        print("Error: ${result.stderr}"); // Error during the capture process
+        Get.snackbar('Error', 'Failed to capture image: ${result.stderr}');
       }
     } catch (e) {
-      print("print Error ${e}");
-      // Get.snackbar('Error', 'Failed to execute capture: $e');
+      print("Error: $e");
+      Get.snackbar('Error', 'Failed to execute capture: $e');
+    } finally {
+      isLoading.value = false; // Hide loader
     }
   }
 
@@ -54,16 +62,13 @@ class CaptureController extends GetxController {
       final bytes = await File(imagePath).readAsBytes();
       // Convert the bytes to a Base64 string
       String base64Image = base64Encode(bytes);
-      print(
-          "Base64 Encoded Image: $base64Image"); // Print the Base64-encoded string
+
       return base64Image;
     } catch (e) {
-      print("Error converting image to Base64: $e");
       return '';
     }
   }
 
-  // Function to send the captured image to a remote server as Base64
   Future<void> uploadImageToServer() async {
     if (capturedImagePath.value.isNotEmpty) {
       try {
@@ -73,24 +78,48 @@ class CaptureController extends GetxController {
 
         if (base64Image.isNotEmpty) {
           var uri = Uri.parse(
-              'http://your_server_ip/upload'); // Replace with your server's IP
-          var request = http.MultipartRequest('POST', uri);
+              'https://dev.hemoqr-devtest-backend-app.smartqr.co.in/app/ingene-result/');
 
-          // Attach the Base64-encoded image as part of the request
-          request.fields['image'] = base64Image; // Send it in the request body
+          // Convert the patients list to JSON
+          List<Map<String, dynamic>> patientsData = patients
+              .map((patient) =>
+                  {'name': patient.name, 'age': patient.age.toString()})
+              .toList();
 
-          // Send the request to the server
-          var response = await request.send();
+          // Create the JSON payload
+          Map<String, dynamic> body = {
+            'patients_data': patientsData,
+            'image_file': base64Image,
+          };
+
+          // Send the JSON request
+          var response = await http.post(
+            uri,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(body),
+          );
 
           if (response.statusCode == 200) {
-            Get.snackbar('Success', 'Image uploaded successfully');
+            // Parse response body
+            final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
 
-            // Delete the image from the Raspberry Pi after successful upload
-            File imageFile = File(capturedImagePath.value);
-            if (await imageFile.exists()) {
-              await imageFile.delete(); // Deletes the file
-              capturedImagePath.value = ''; // Clear the captured image path
-              Get.snackbar('Success', 'Image deleted from device after upload');
+            // Create ApiResponse instance
+            ApiResponse apiResponse = ApiResponse.fromJson(jsonResponse);
+
+            if (apiResponse.status == 'success') {
+              // Navigate to ResultScreen and pass ApiResponse as an argument
+              Get.offAndToNamed(AppRoutes.result, arguments: apiResponse);
+
+              // Optionally delete the image after navigating
+              File imageFile = File(capturedImagePath.value);
+              if (await imageFile.exists()) {
+                await imageFile.delete();
+                capturedImagePath.value = '';
+              }
+            } else {
+              Get.snackbar('Error', 'Failed to upload image');
             }
           } else {
             Get.snackbar('Error', 'Failed to upload image');
