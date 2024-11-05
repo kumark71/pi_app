@@ -10,7 +10,6 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isShiftEnabled = false; // Variable to track if Shift is pressed
     return Scaffold(
       appBar: AppBar(
         title: const Text("Wi-Fi Settings"),
@@ -47,25 +46,30 @@ class SettingsPage extends StatelessWidget {
                 }
 
                 return RefreshIndicator(
-  onRefresh: () async {
-    await controller.fetchNetworks();
-  },
-  child: ListView.builder(
-    itemCount: controller.networks.length,
-    itemBuilder: (context, index) {
-      final network = controller.networks[index];
-      return ListTile(
-        title: Text(network),
-        trailing: const Icon(Icons.wifi), // Display the icon but remove the button functionality
-        onTap: () {
-          // Make the whole ListTile clickable
-          _showWifiConnectDialog(context, network);
-        },
-      );
-    },
-  ),
-);
-
+                  onRefresh: () async {
+                    await controller.fetchNetworks();
+                  },
+                  child: ListView.builder(
+                    itemCount: controller.networks.length,
+                    itemBuilder: (context, index) {
+                      final network = controller.networks[index];
+                      return ListTile(
+                        title: Text(network),
+                        trailing: const Icon(Icons.wifi),
+                        onTap: () {
+                          // Navigate to a new page with the network name passed as an argument
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  WifiConnectPage(network: network),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                );
               }),
             ),
           ],
@@ -73,109 +77,123 @@ class SettingsPage extends StatelessWidget {
       ),
     );
   }
+}
 
-  void _showWifiConnectDialog(BuildContext context, String network) {
-    final passwordController = TextEditingController();
-    bool isKeyboardVisible = false;
-    bool isShiftEnabled = false; // Shift state tracking
+class WifiConnectPage extends StatefulWidget {
+  final String network;
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text("Connect to $network"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text("Enter Password:"),
-                  TextField(
-                    controller: passwordController,
-                    decoration: const InputDecoration(
-                      hintText: "Password",
-                    ),
-                    onTap: () {
-                      setState(() {
-                        isKeyboardVisible = true;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  Obx(() {
-                    if (controller.isConnecting.value) {
-                      return const CircularProgressIndicator();
-                    } else {
-                      return Container();
-                    }
-                  }),
-                  const SizedBox(height: 10),
+  WifiConnectPage({required this.network, super.key});
 
-                  // Display the virtual keyboard when needed
-                  if (isKeyboardVisible)
-                    Container(
-                      color: Colors.grey[200],
-                      child: VirtualKeyboard(
-                        height: 300,
-                        textColor: Colors.black,
-                        fontSize: 20,
-                        defaultLayouts: [VirtualKeyboardDefaultLayouts.English],
-                        type: VirtualKeyboardType.Alphanumeric,
-                        postKeyPress: (key) {
-                          // Handle key presses and update the password controller
-                          if (key.keyType == VirtualKeyboardKeyType.String) {
-                            // If Shift is enabled, use uppercase, otherwise use lowercase
-                            passwordController.text += isShiftEnabled
-                                ? key.capsText ?? ''
-                                : key.text ?? '';
-                          } else if (key.keyType ==
-                              VirtualKeyboardKeyType.Action) {
-                            switch (key.action) {
-                              case VirtualKeyboardKeyAction.Backspace:
-                                if (passwordController.text.isNotEmpty) {
-                                  passwordController.text =
-                                      passwordController.text.substring(0,
-                                          passwordController.text.length - 1);
-                                }
-                                break;
-                              case VirtualKeyboardKeyAction.Return:
-                                setState(() {
-                                  isKeyboardVisible = false;
-                                });
-                                break;
-                              case VirtualKeyboardKeyAction.Space:
-                                passwordController.text += ' ';
-                                break;
-                              case VirtualKeyboardKeyAction.Shift:
-                                // Toggle Shift state when Shift key is pressed
-                                setState(() {
-                                  isShiftEnabled = !isShiftEnabled;
-                                });
-                                break;
-                              default:
-                            }
-                          }
-                        },
-                      ),
-                    ),
-                ],
+  @override
+  _WifiConnectPageState createState() => _WifiConnectPageState();
+}
+
+class _WifiConnectPageState extends State<WifiConnectPage> {
+  final SettingsController controller = Get.find();
+  final TextEditingController passwordController = TextEditingController();
+  bool isKeyboardVisible = false;
+  bool isShiftEnabled = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Connect to ${widget.network}"),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const Text(
+              "Enter Password:",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: passwordController,
+              decoration: const InputDecoration(
+                hintText: "Password",
               ),
-              actions: [
-                TextButton(
+              onTap: () {
+                setState(() {
+                  isKeyboardVisible = true;
+                });
+              },
+            ),
+            const SizedBox(height: 20),
+            Obx(() {
+              if (controller.isConnecting.value) {
+                return const CircularProgressIndicator();
+              } else {
+                return Container();
+              }
+            }),
+            const SizedBox(height: 10),
+
+            // Display the virtual keyboard when needed
+            if (isKeyboardVisible)
+              Container(
+                color: Colors.grey[200],
+                child: VirtualKeyboard(
+                  height: 300,
+                  textColor: Colors.black,
+                  fontSize: 20,
+                  defaultLayouts: [VirtualKeyboardDefaultLayouts.English],
+                  type: VirtualKeyboardType.Alphanumeric,
+                  postKeyPress: (key) {
+                    // Handle key presses and update the password controller
+                    if (key.keyType == VirtualKeyboardKeyType.String) {
+                      passwordController.text +=
+                          isShiftEnabled ? key.capsText ?? '' : key.text ?? '';
+                    } else if (key.keyType == VirtualKeyboardKeyType.Action) {
+                      switch (key.action) {
+                        case VirtualKeyboardKeyAction.Backspace:
+                          if (passwordController.text.isNotEmpty) {
+                            passwordController.text = passwordController.text
+                                .substring(
+                                    0, passwordController.text.length - 1);
+                          }
+                          break;
+                        case VirtualKeyboardKeyAction.Return:
+                          setState(() {
+                            isKeyboardVisible = false;
+                          });
+                          break;
+                        case VirtualKeyboardKeyAction.Space:
+                          passwordController.text += ' ';
+                          break;
+                        case VirtualKeyboardKeyAction.Shift:
+                          // Toggle Shift state when Shift key is pressed
+                          setState(() {
+                            isShiftEnabled = !isShiftEnabled;
+                          });
+                          break;
+                        default:
+                      }
+                    }
+                  },
+                ),
+              ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
                   onPressed: () {
-                    controller.connectToWifi(network, passwordController.text);
+                    controller.connectToWifi(
+                        widget.network, passwordController.text);
                   },
                   child: const Text("Connect"),
                 ),
-                TextButton(
+                ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   child: const Text("Cancel"),
                 ),
               ],
-            );
-          },
-        );
-      },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

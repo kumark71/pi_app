@@ -53,7 +53,7 @@ class CaptureScreen extends StatelessWidget {
                           );
                         }
                         return Container(
-                          height: MediaQuery.of(context).size.height * 0.5,
+                          height: MediaQuery.of(context).size.height * 0.4,
                           child: GridView.builder(
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(

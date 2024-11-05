@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:process_run/shell.dart'; // You can use this package for executing system commands
 
@@ -60,6 +61,7 @@ class SettingsController extends GetxController {
   }
 
   // Connect to a Wi-Fi network
+
   Future<void> connectToWifi(String ssid, String password) async {
     isConnecting(true); // Start loading when attempting to connect
     try {
@@ -70,13 +72,36 @@ class SettingsController extends GetxController {
         'nmcli dev wifi connect "$ssid" password "$password"',
       );
 
-      // Process results and output success/failure
-      if (result.isNotEmpty) {
+      // Check the result for success
+      if (result.isNotEmpty && result.first.exitCode == 0) {
         log('STDOUT: ${result.first.stdout}');
+        log('Connected successfully to $ssid');
+        Get.snackbar(
+          'Connection Successful',
+          'You are now connected to $ssid',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      } else {
         log('STDERR: ${result.first.stderr}');
+        Get.snackbar(
+          'Connection Failed',
+          'Unable to connect to $ssid. Please check the password and try again.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
       }
     } catch (e) {
       log('Error connecting to Wi-Fi: $e');
+      Get.snackbar(
+        'Connection Error',
+        'An error occurred while connecting to $ssid. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } finally {
       isConnecting(false); // Stop loading after connection attempt
     }

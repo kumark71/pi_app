@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'package:get/get.dart';
 import 'package:process_run/shell.dart';
@@ -5,6 +6,7 @@ import 'package:process_run/shell.dart';
 class HomeController extends GetxController {
   var connectedWifi = ''.obs; // Observable to store the connected Wi-Fi network
   var isCheckingWifi = true.obs; // Observable to track if we are checking Wi-Fi
+  Timer? wifiCheckTimer; // Timer to periodically check Wi-Fi
 
   @override
   void onInit() {
@@ -15,7 +17,28 @@ class HomeController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    fetchConnectedWifi(); // Check Wi-Fi when the page becomes visible
+    startWifiCheck(); // Start checking Wi-Fi only when the page is ready and visible
+  }
+
+  @override
+  void onClose() {
+    stopWifiCheck(); // Stop checking Wi-Fi when the page is no longer visible
+    super.onClose();
+  }
+
+  // Start a periodic Wi-Fi check
+  void startWifiCheck() {
+    fetchConnectedWifi(); // Fetch immediately on page load
+
+    // Check Wi-Fi every 10 seconds (adjust as needed)
+    wifiCheckTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+      fetchConnectedWifi();
+    });
+  }
+
+  // Stop the periodic Wi-Fi check
+  void stopWifiCheck() {
+    wifiCheckTimer?.cancel();
   }
 
   // Fetch the connected Wi-Fi network
