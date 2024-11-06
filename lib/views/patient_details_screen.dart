@@ -222,22 +222,45 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceEvenly,
                                   children: [
-                                    ElevatedButton(
-                                      onPressed: controller.patients.length < 8
-                                          ? () {
-                                              controller.submitForm();
-                                              setState(() {
-                                                isKeyboardVisible = false;
-                                              });
-                                            }
-                                          : null,
-                                      child: const Text("Submit"),
+                                    SizedBox(
+                                      width: 150, // Set the width of the button
+                                      height:
+                                          45, // Set the height of the button
+                                      child: ElevatedButton(
+                                        onPressed:
+                                            controller.patients.length < 8
+                                                ? () {
+                                                    controller.submitForm();
+                                                    setState(() {
+                                                      isKeyboardVisible = false;
+                                                    });
+                                                  }
+                                                : null,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.blue,
+                                          foregroundColor: Colors.white,
+                                          textStyle:
+                                              const TextStyle(fontSize: 17),
+                                        ),
+                                        child: const Text("Submit"),
+                                      ),
                                     ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        controller.navigateToCapture();
-                                      },
-                                      child: const Text("Next"),
+                                    SizedBox(
+                                      width: 150, // Set the width of the button
+                                      height:
+                                          45, // Set the height of the button
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          controller.navigateToCapture();
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.blue,
+                                          foregroundColor: Colors.white,
+                                          textStyle:
+                                              const TextStyle(fontSize: 17),
+                                        ),
+                                        child: const Text("Next"),
+                                      ),
                                     ),
                                   ],
                                 )),

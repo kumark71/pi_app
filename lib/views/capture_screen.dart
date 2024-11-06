@@ -112,34 +112,42 @@ class CaptureScreen extends StatelessWidget {
 
               // Capture Photo Button with loader
               Obx(() {
-                return ElevatedButton(
-                  onPressed: controller.isLoading.value
-                      ? null // Disable the button while loading
-                      : () {
-                          controller.captureImage();
-                        },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 15),
-                    textStyle: const TextStyle(fontSize: 18),
-                  ),
-                  child: controller.isLoading.value
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
+                return SizedBox(
+                  height: 45,
+                  child: ElevatedButton(
+                    onPressed: controller.isLoading.value
+                        ? null // Disable the button while loading
+                        : () {
+                            controller.captureImage();
+                          },
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 30, vertical: 15),
+                      textStyle: const TextStyle(fontSize: 17),
+                    ),
+                    child: controller.isLoading.value
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.camera_alt,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 8),
+                              Text("Capture Photo"),
+                            ],
                           ),
-                        )
-                      : const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.camera_alt),
-                            SizedBox(width: 8),
-                            Text("Capture Photo"),
-                          ],
-                        ),
+                  ),
                 );
               }),
             ],

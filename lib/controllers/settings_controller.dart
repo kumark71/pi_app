@@ -21,7 +21,7 @@ class SettingsController extends GetxController {
     try {
       var shell = Shell(verbose: true); // Set verbose when creating Shell
       var result = await shell.run(
-        'nmcli dev wifi', // Command to get Wi-Fi networks
+        'sudo nmcli dev wifi', // Command to get Wi-Fi networks
       );
 
       // Process the result and update network list
@@ -67,24 +67,22 @@ class SettingsController extends GetxController {
     try {
       var shell = Shell(verbose: true);
 
-      // Wrap SSID and password in double quotes to handle spaces and special characters
+      // Add a connection profile with auto-connect enabled
       var result = await shell.run(
-        'nmcli dev wifi connect "$ssid" password "$password"',
+        'sudo nmcli dev wifi connect "$ssid" password "$password"',
       );
 
-      // Check the result for success
       if (result.isNotEmpty && result.first.exitCode == 0) {
-        log('STDOUT: ${result.first.stdout}');
-        log('Connected successfully to $ssid');
+        log('Connected and auto-connect enabled for $ssid');
         Get.snackbar(
           'Connection Successful',
-          'You are now connected to $ssid',
+          'Auto-connect enabled for $ssid',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.green,
           colorText: Colors.white,
         );
       } else {
-        log('STDERR: ${result.first.stderr}');
+        log('Connection failed: ${result.first.stderr}');
         Get.snackbar(
           'Connection Failed',
           'Unable to connect to $ssid. Please check the password and try again.',

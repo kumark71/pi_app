@@ -8,41 +8,39 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         alignment: Alignment.center,
         children: [
-          // Display the splash image filling the entire screen
+          // Fullscreen splash image
           Positioned.fill(
             child: Image.asset(
               'assets/images/smartqr_splash_image_new.png',
-              fit: BoxFit.cover, // Adjust as needed (cover, contain, etc.)
+              fit: BoxFit.cover, // Make image cover the entire screen
             ),
           ),
           // Centered progress bar
           Positioned(
-            bottom: 150, // Position the progress bar at the center bottom
-            left: screenWidth * 0.1, // Center-align by adjusting left and width
-            right: screenWidth * 0.1,
+            bottom: 130, // Position the progress bar near the bottom
+            left: MediaQuery.of(context).size.width * 0.1,
+            right: MediaQuery.of(context).size.width * 0.1,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10), // Rounded corners
               child: Obx(() => LinearProgressIndicator(
                     value: controller.progress.value, // Update progress value
                     minHeight:
                         13, // Set the height for the rounded progress bar
-                    backgroundColor: Colors.black, // Set background color
+                    backgroundColor: const Color.fromARGB(
+                        255, 24, 24, 24), // Set background color
                     color: Colors.green, // Set progress color
                   )),
             ),
           ),
-          // Loading text positioned at the bottom right
           // Loading text positioned at the bottom right with green percentage
           Positioned(
-            bottom: 120, // Adjust as needed
-            right: screenWidth * 0.1, // Right alignment
+            bottom: 90, // Adjust as needed
+            right: MediaQuery.of(context).size.width * 0.1, // Right alignment
             child: Obx(() => Text.rich(
                   TextSpan(
                     children: [

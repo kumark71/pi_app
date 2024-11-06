@@ -69,11 +69,20 @@ class ResultScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                Get.back();
-              },
-              child: const Text("Home"),
+            SizedBox(
+              width: 150, // Set the width of the button
+              height: 45, // Set the height of the button
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  textStyle: const TextStyle(fontSize: 17),
+                ),
+                onPressed: () {
+                  Get.back();
+                },
+                child: const Text("Home"),
+              ),
             ),
           ],
         ),

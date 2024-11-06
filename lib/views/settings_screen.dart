@@ -178,16 +178,34 @@ class _WifiConnectPageState extends State<WifiConnectPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    controller.connectToWifi(
-                        widget.network, passwordController.text);
-                  },
-                  child: const Text("Connect"),
+                SizedBox(
+                  width: 150, // Set the width of the button
+                  height: 45, // Set the height of the button
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      textStyle: const TextStyle(fontSize: 18),
+                    ),
+                    onPressed: () {
+                      controller.connectToWifi(
+                          widget.network, passwordController.text);
+                    },
+                    child: const Text("Connect"),
+                  ),
                 ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel"),
+                SizedBox(
+                  width: 150, // Set the width of the button
+                  height: 45, // Set the height of the button
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      textStyle: const TextStyle(fontSize: 18),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Cancel"),
+                  ),
                 ),
               ],
             ),
