@@ -231,7 +231,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                                                 8
                                             ? () {
                                                 Get.defaultDialog(
-                                                  title: 'Delete Patient',
+                                                  title: 'Add Patient',
                                                   middleText:
                                                       'Are you sure you want to add this patient?',
                                                   confirm: ElevatedButton(
@@ -241,6 +241,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                                                         isKeyboardVisible =
                                                             false;
                                                       });
+                                                      Get.back();
                                                     },
                                                     child: const Text('Yes'),
                                                   ),
@@ -269,7 +270,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                                       child: ElevatedButton(
                                         onPressed: () {
                                           Get.defaultDialog(
-                                            title: 'Delete Patient',
+                                            title: 'Next Step',
                                             middleText:
                                                 'Are you sure you want to proceed to the next step?',
                                             confirm: ElevatedButton(
