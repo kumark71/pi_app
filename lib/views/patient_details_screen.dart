@@ -227,15 +227,32 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                                       height:
                                           45, // Set the height of the button
                                       child: ElevatedButton(
-                                        onPressed:
-                                            controller.patients.length < 8
-                                                ? () {
-                                                    controller.submitForm();
-                                                    setState(() {
-                                                      isKeyboardVisible = false;
-                                                    });
-                                                  }
-                                                : null,
+                                        onPressed: controller.patients.length <
+                                                8
+                                            ? () {
+                                                Get.defaultDialog(
+                                                  title: 'Delete Patient',
+                                                  middleText:
+                                                      'Are you sure you want to add this patient?',
+                                                  confirm: ElevatedButton(
+                                                    onPressed: () {
+                                                      controller.submitForm();
+                                                      setState(() {
+                                                        isKeyboardVisible =
+                                                            false;
+                                                      });
+                                                    },
+                                                    child: const Text('Yes'),
+                                                  ),
+                                                  cancel: ElevatedButton(
+                                                    onPressed: () {
+                                                      Get.back(); // Close the dialog without deleting
+                                                    },
+                                                    child: const Text('No'),
+                                                  ),
+                                                );
+                                              }
+                                            : null,
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.blue,
                                           foregroundColor: Colors.white,
@@ -251,7 +268,23 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                                           45, // Set the height of the button
                                       child: ElevatedButton(
                                         onPressed: () {
-                                          controller.navigateToCapture();
+                                          Get.defaultDialog(
+                                            title: 'Delete Patient',
+                                            middleText:
+                                                'Are you sure you want to proceed to the next step?',
+                                            confirm: ElevatedButton(
+                                              onPressed: () {
+                                                controller.navigateToCapture();
+                                              },
+                                              child: const Text('Yes'),
+                                            ),
+                                            cancel: ElevatedButton(
+                                              onPressed: () {
+                                                Get.back(); // Close the dialog without deleting
+                                              },
+                                              child: const Text('No'),
+                                            ),
+                                          );
                                         },
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.blue,
